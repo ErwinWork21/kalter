@@ -21,10 +21,10 @@ export default function DashboardHome() {
                     <h4 className="font-bold text-lg mb-4">Perbandingan Penghasilan Bulanan</h4>
                     <div style={{ width: '100%', height: 300 }} className="mb-6">
                         <ResponsiveContainer>
-                            <BarChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                            <BarChart data={chartData} margin={{ top: 15, right: 10, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" />
-                                <YAxis tickFormatter={(val) => `${val/1000000} Jt`} />
+                                <YAxis width={56} tickMargin={6} tickFormatter={(val) => `${val/1000000} Jt`} />
                                 <Tooltip formatter={(value) => formatCurrency(value)} />
                                 <Legend />
                                 <Bar dataKey="Penghasilan Bruto" fill="#C89F74" radius={[4, 4, 0, 0]} />
