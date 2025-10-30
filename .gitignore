@@ -1,0 +1,7 @@
+node_modules
+.npm-cache
+# Ignore environment files (Supabase credentials)
+.env
+.env.*
+.env
+.env.*
