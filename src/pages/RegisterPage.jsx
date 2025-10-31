@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Stethoscope, Home } from 'lucide-react';
+import { Stethoscope, Home, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
@@ -34,17 +34,19 @@ export default function RegisterPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setLoading(true);
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: { data: { displayName } }
         });
-        if (error) { setError(error.message); return; }
+        if (error) { setError(error.message); setLoading(false); return; }
         alert('Registrasi berhasil! Periksa email Anda untuk verifikasi (jika diaktifkan).');
         navigate('/login');
     };
@@ -72,7 +74,16 @@ export default function RegisterPage() {
                     <label className="block text-gray-700 text-sm font-bold mb-2">Password</label>
                     <input onKeyDown={handleKeyDown} type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full p-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]" />
                 </div>
-                <button type="submit" className="w-full bg-[#C89F74] hover:bg-[#b98e65] text-white font-bold py-3 px-4 rounded-lg transition-colors">Register</button>
+                <button type="submit" disabled={loading} className="w-full bg-[#C89F74] hover:bg-[#b98e65] disabled:bg-[#b98e65] disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    {loading ? (
+                        <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Memproses...
+                        </>
+                    ) : (
+                        'Register'
+                    )}
+                </button>
                 <p className="text-center text-gray-600 text-sm mt-6">
                     Sudah punya akun? <button type="button" onClick={() => navigate('/login')} className="font-bold text-[#C89F74] hover:text-[#b98e65]">Login di sini</button>
                 </p>
