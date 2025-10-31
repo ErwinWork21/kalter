@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom';
 import IncomeEditor from '../components/IncomeEditor';
+import Toast from '../components/Toast';
+import { validateIncomesComplete } from '../utils/validation';
 import { hospitalList as sharedHospitalList, monthNames as sharedMonthNames } from '../constants/lists';
 
 // using shared lists from constants
@@ -13,6 +15,9 @@ export default function InputDataPage() {
     const monthNamesLocal = sharedMonthNames;
     const navigate = useNavigate();
     const [showToast, setShowToast] = useState(false);
+    const [showError, setShowError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [errorIndexes, setErrorIndexes] = useState([]);
 
     useEffect(() => {
         const monthParam = searchParams.get('month');
@@ -30,10 +35,6 @@ export default function InputDataPage() {
         },
         onSuccess: () => {
             setShowToast(true);
-            setTimeout(() => {
-                setShowToast(false);
-                navigate('/app/riwayat');
-            }, 500);
         }
     });
 
@@ -47,6 +48,15 @@ export default function InputDataPage() {
             currentIncome[field] = value;
         }
         setMonthlyIncomes(newMonthlyIncomes);
+        // Clear error for this specific entry if it was previously marked as error
+        if (errorIndexes.includes(incomeIndex)) {
+            const newErrorIndexes = errorIndexes.filter(idx => idx !== incomeIndex);
+            setErrorIndexes(newErrorIndexes);
+            if (newErrorIndexes.length === 0) {
+                setShowError(false);
+                setErrorMessage('');
+            }
+        }
     };
 
     const addIncomeField = () => {
@@ -63,14 +73,46 @@ export default function InputDataPage() {
         }
     };
 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (saveMutation.isPending) return;
+        
+        const validation = validateIncomesComplete(monthlyIncomes[currentMonth]);
+        if (!validation.isValid) {
+            setErrorMessage(validation.errorMessage);
+            setErrorIndexes(validation.errorIndexes);
+            setShowError(true);
+            return;
+        }
+        
+        setErrorIndexes([]);
+        await saveMutation.mutateAsync();
+    };
+
     return (
         <>
-        {showToast && (
-            <div className="fixed top-4 right-4 z-50 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg">
-                Data berhasil disimpan.
-            </div>
-        )}
-        <form onSubmit={async (e) => { e.preventDefault(); if (saveMutation.isPending) return; await saveMutation.mutateAsync(); }} className="bg-white p-6 sm:p-8 rounded-2xl shadow-md max-w-2xl mx-auto" aria-busy={saveMutation.isPending}>
+        <Toast 
+            show={showToast} 
+            message="Data berhasil disimpan."
+            type="success"
+            duration={500}
+            onClose={() => {
+                setShowToast(false);
+                navigate('/app/riwayat');
+            }}
+        />
+        <Toast 
+            show={showError} 
+            message={errorMessage}
+            type="error"
+            duration={3000}
+            onClose={() => {
+                setShowError(false);
+                setErrorMessage('');
+                setErrorIndexes([]);
+            }}
+        />
+        <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl shadow-md max-w-2xl mx-auto" aria-busy={saveMutation.isPending}>
             <h3 className="font-bold text-xl sm:text-2xl mb-6">Input Data Pajak Bulanan</h3>
             <div className="space-y-4">
                 <div>
@@ -85,6 +127,7 @@ export default function InputDataPage() {
                     onChange={handleIncomeChange}
                     onAdd={addIncomeField}
                     onRemove={removeIncomeField}
+                    errorIndexes={errorIndexes}
                 />
                 <button type="submit" disabled={saveMutation.isPending} aria-live="polite" className={`w-full mt-4 bg-[#C89F74] hover:bg-[#b98e65] text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:shadow-outline transition-colors duration-300 ${saveMutation.isPending ? 'opacity-75 cursor-not-allowed hover:bg-[#C89F74]' : ''}`}>
                     {saveMutation.isPending ? (

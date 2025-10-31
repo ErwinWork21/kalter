@@ -241,7 +241,7 @@ export default function Dashboard() {
                 <main className="flex-1 p-4 sm:p-6 md:p-8">
                     <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                         <div>
-                            <h2 className="text-2xl md:text-3xl font-bold">Halo!</h2>
+                            <h2 className="text-2xl md:text-3xl font-bold">Halo, {supabaseUser?.user_metadata?.displayName || supabaseUser?.email || 'User'}!</h2>
                             <p className="text-gray-500">Selamat datang kembali di dashboard Anda.</p>
                         </div>
                         <div className="flex items-center p-2 rounded-full bg-white shadow-sm self-end sm:self-center">
