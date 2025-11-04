@@ -1,183 +1,243 @@
-### Kalkulator Dokter
+# Kalkulator Dokter
 
-Modern React application for calculating and managing doctor-related data with Supabase authentication, routing, charts, and optional PHP backend integration.
-
----
+A web application for doctors to calculate Indonesian income tax (PPh21) based on monthly income from multiple hospitals. The application helps doctors track their income, calculate tax obligations, and manage their tax records throughout the year.
 
 ## Features
 
-- **React 18 + CRA runtime**: `react-scripts` for dev/build/test
-- **Routing**: `react-router-dom@6`
-- **Auth & data**: Supabase client (`@supabase/supabase-js@2`)
-- **Data fetching**: `@tanstack/react-query`
-- **Charts**: `recharts`
-- **Styling**: Tailwind CSS
-- **Icons**: `lucide-react`
-- **Optional backend**: PHP endpoint adapter via `src/api.js` (toggleable)
-
----
+- **User Authentication**: Secure login and registration using Supabase Auth
+- **Monthly Income Input**: Track income from multiple hospitals and sources per month
+- **Tax Calculation**: Automatic PPh21 calculation based on Indonesian tax regulations
+- **Dashboard**: Visual overview with charts showing monthly income and tax estimates
+- **History**: View and manage saved calculation records
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## Tech Stack
 
-- React 18, React DOM
-- React Router v6
-- TanStack Query v5
-- Recharts
-- Tailwind CSS (PostCSS + Autoprefixer)
-- Supabase JS v2
+- **React 18** - Frontend framework
+- **React Router** - Navigation
+- **Supabase** - Authentication and database
+- **TanStack Query** - Data fetching and caching
+- **Recharts** - Data visualization
+- **Tailwind CSS** - Styling
 
----
+## Prerequisites
 
-## Getting Started
+- Node.js (v14 or higher)
+- npm or yarn
+- A Supabase account
+- A Vercel account (for deployment)
 
-### Prerequisites
+## Setup Instructions
 
-- Node.js 18+ and npm
-- A Supabase project (for authentication) if using Supabase login
+### 1. Clone the Repository
 
-### Installation
+```bash
+git clone <repository-url>
+cd kalkulator-dokter
+```
+
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### Environment Variables
+### 3. Connect to Supabase
 
-Create a `.env` file in the project root with:
+#### Step 1: Create a Supabase Project
+
+1. Go to [https://supabase.com](https://supabase.com)
+2. Sign up or log in to your account
+3. Click "New Project"
+4. Fill in the project details:
+   - **Name**: Choose a name for your project (e.g., "kalkulator-dokter")
+   - **Database Password**: Create a strong password (save this securely)
+   - **Region**: Select the region closest to your users
+5. Click "Create new project" and wait for it to be set up (this may take a few minutes)
+
+#### Step 2: Get Your Supabase Credentials
+
+1. In your Supabase project dashboard, go to **Settings** (gear icon in the sidebar)
+2. Click on **API** in the settings menu
+3. You'll find two important values:
+   - **Project URL**: Your Supabase project URL (e.g., `https://xxxxx.supabase.co`)
+   - **anon/public key**: Your public anonymous key (starts with `eyJ...`)
+
+#### Step 3: Create the Database Table
+
+1. In your Supabase project, go to **SQL Editor** in the sidebar
+2. Click "New query"
+3. Run the following SQL to create the `calculations` table:
+
+```sql
+CREATE TABLE IF NOT EXISTS calculations (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  saved_data JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  UNIQUE(user_id)
+);
+
+-- Enable Row Level Security
+ALTER TABLE calculations ENABLE ROW LEVEL SECURITY;
+
+-- Create policy to allow users to read their own data
+CREATE POLICY "Users can view their own calculations"
+  ON calculations FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Create policy to allow users to insert their own data
+CREATE POLICY "Users can insert their own calculations"
+  ON calculations FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Create policy to allow users to update their own data
+CREATE POLICY "Users can update their own calculations"
+  ON calculations FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Create policy to allow users to delete their own data
+CREATE POLICY "Users can delete their own calculations"
+  ON calculations FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+4. Click "Run" to execute the query
+
+#### Step 4: Configure Environment Variables
+
+1. Create a `.env` file in the root directory of your project:
 
 ```bash
-REACT_APP_SUPABASE_URL=your_supabase_url
+touch .env
+```
+
+2. Add your Supabase credentials to the `.env` file:
+
+```env
+REACT_APP_SUPABASE_URL=your_supabase_project_url
 REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-These are read in `src/supabaseClient.js`.
+Replace `your_supabase_project_url` and `your_supabase_anon_key` with the values from Step 2.
 
-### Available Scripts
+**Important**: Never commit the `.env` file to version control. It's already in `.gitignore` by default.
 
-```bash
-npm start   # Start dev server
-npm build   # Production build
-npm test    # Run tests (Jest via react-scripts)
-npm run eject  # Eject CRA (irreversible)
-```
+#### Step 5: Enable Email Authentication (Optional but Recommended)
 
----
+1. In Supabase dashboard, go to **Authentication** → **Providers**
+2. Ensure **Email** provider is enabled
+3. Configure email templates if needed (under **Authentication** → **Email Templates**)
 
-## Project Structure
-
-```text
-public/
-  index.html
-src/
-  api.js                # Optional PHP backend adapter (toggle via window.USE_API)
-  App.js                # App routes and guards
-  auth/
-    useSupabaseSession.js
-  components/
-    DashboardSkeleton.jsx
-    NavItem.jsx
-    SummaryPair.jsx
-  pages/
-    Dashboard.jsx
-    DashboardHome.jsx
-    InputDataPage.jsx
-    LandingPage.jsx
-    LoginPage.jsx
-    RegisterPage.jsx
-    RiwayatPage.jsx
-  supabaseClient.js     # Supabase client setup
-  utils/
-    tax.js
-```
-
-Key routes are defined in `src/App.js`. Auth-aware routes use `useSupabaseSession` to guard the dashboard.
-
----
-
-## Running Locally
-
-1) Ensure `.env` is configured (see above) if using Supabase auth
-2) Start the app:
+### 4. Run the Application Locally
 
 ```bash
 npm start
 ```
 
-The app will be available at `http://localhost:3000/` by default.
+The application will open at [http://localhost:3000](http://localhost:3000)
 
----
+## Deployment to Vercel
 
-## Optional: PHP Backend Integration
+### Step 1: Prepare Your Project
 
-`src/api.js` enables calling a PHP backend if the following globals are set (e.g., in `public/index.html` before the root div):
+1. Ensure your code is committed to a Git repository (GitHub, GitLab, or Bitbucket)
+2. Make sure your `.env` file is **not** committed (it should be in `.gitignore`)
 
-```html
-<script>
-  window.USE_API = true;                // enable backend calls
-  window.API_BASE = '/backend';         // path containing api.php
-</script>
-```
+### Step 2: Create a Vercel Account
 
-When enabled, the app will call `API_BASE + '/api.php?action=...'` for actions like `login`, `register`, `saveCalculation`, etc. When disabled, it falls back to local behavior (e.g., localStorage stubs).
+1. Go to [https://vercel.com](https://vercel.com)
+2. Sign up or log in (you can use your GitHub account for easy integration)
 
-### Shared Hosting (Rumahweb) quick steps
+### Step 3: Import Your Project
 
-The repository includes `README-deploy.txt` with a fuller guide. Summary:
+1. Click **"Add New..."** → **"Project"** in your Vercel dashboard
+2. Import your Git repository:
+   - If using GitHub, click **"Import Git Repository"**
+   - Select your repository from the list
+   - Click **"Import"**
 
-- Create MySQL DB and user in cPanel; import `schema.sql`
-- Configure DB credentials in `backend/db.php`
-- Upload `backend/api.php` and `backend/db.php` to your hosting (e.g., `/public_html/backend/`)
-- Build the frontend locally (`npm run build`) and upload the contents of `build/` to `/public_html/`
-- Set `window.USE_API` and `window.API_BASE` to point to your backend path
+### Step 4: Configure Build Settings
 
-For security, ensure HTTPS, restrict CORS, validate inputs, and use prepared statements.
+Vercel should auto-detect React projects, but verify these settings:
 
----
+- **Framework Preset**: Create React App
+- **Root Directory**: `./` (root)
+- **Build Command**: `npm run build`
+- **Output Directory**: `build`
+- **Install Command**: `npm install`
 
-## Deployment
+### Step 5: Add Environment Variables
 
-### Static hosting (Netlify, Vercel, GitHub Pages)
+1. In the project configuration page, scroll down to **"Environment Variables"**
+2. Click **"Add"** and add each variable:
+   - **Name**: `REACT_APP_SUPABASE_URL`
+   - **Value**: Your Supabase project URL
+   - **Environment**: Production, Preview, and Development (select all)
+3. Click **"Add"** again for the second variable:
+   - **Name**: `REACT_APP_SUPABASE_ANON_KEY`
+   - **Value**: Your Supabase anon key
+   - **Environment**: Production, Preview, and Development (select all)
 
-1) Build the app:
+### Step 6: Deploy
 
-```bash
-npm run build
-```
+1. Click **"Deploy"** button
+2. Wait for the build to complete (usually 2-3 minutes)
+3. Once deployed, you'll get a URL like `https://your-project.vercel.app`
+4. Your application is now live!
 
-2) Deploy the `build/` directory to your provider. If you need the PHP backend, deploy it separately to a PHP-capable host and configure `window.API_BASE`.
+### Step 7: Update Supabase URL Settings (Optional)
 
-### Environment variables in hosting
+If you want to restrict your Supabase API to only your Vercel domain:
 
-Set `REACT_APP_SUPABASE_URL` and `REACT_APP_SUPABASE_ANON_KEY` in your hosting provider’s environment settings to match your `.env` when building there.
+1. Go to your Supabase project → **Settings** → **API**
+2. Under **"URL Configuration"**, add your Vercel domain to the allowed URLs
+3. This helps secure your API
 
----
+## Post-Deployment
 
-## Configuration Notes
+### Custom Domain (Optional)
 
-- Tailwind is configured via `tailwind.config.js` and `postcss.config.js`
-- Browser support is governed by `browserslist` in `package.json`
-- Ensure Supabase URL and anon key are valid; sessions are persisted and tokens auto-refreshed per `supabaseClient.js`
+1. In your Vercel project dashboard, go to **Settings** → **Domains**
+2. Add your custom domain
+3. Follow Vercel's instructions to configure DNS
 
----
+### Monitoring
+
+- Check **Analytics** in Vercel dashboard for traffic insights
+- Monitor **Logs** for any runtime errors
+- Set up **Alerts** for build failures
 
 ## Troubleshooting
 
-- Missing auth/session: verify `.env` values and that Supabase project auth is enabled
-- 404 on routes when deployed: ensure SPA fallback is configured on your host (serving `index.html`)
-- Backend calls failing: confirm `window.USE_API = true` and `window.API_BASE` path is correct; check CORS and HTTPS
+### Build Fails on Vercel
 
----
+- Ensure all environment variables are set correctly
+- Check that `REACT_APP_` prefix is used for all React environment variables
+- Verify your Supabase URL and key are correct
 
-## Contributing
+### Authentication Not Working
 
-1) Fork the repo and create a feature branch
-2) Make changes with clear commits
-3) Open a PR with a concise description and screenshots if UI changes
+- Verify Supabase credentials in environment variables
+- Check Supabase dashboard → Authentication → Providers are enabled
+- Ensure RLS (Row Level Security) policies are correctly set
 
----
+### Database Errors
 
-## License
+- Verify the `calculations` table was created successfully
+- Check RLS policies allow users to access their own data
+- Review Supabase logs for detailed error messages
 
-No license specified. If you plan to publish/distribute, consider adding a license (e.g., MIT).
+## Development
 
+### Available Scripts
 
+- `npm start` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests
+- `npm run eject` - Eject from Create React App (irreversible)
+
+## Support
+
+For issues or questions, please open an issue in the repository.
