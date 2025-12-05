@@ -11,7 +11,7 @@ import { calculationService } from '../services/calculationService';
 const MonthlyIncomeChart = ({ chartData, formatCurrency }) => (
     <div style={{ width: '100%', height: 300 }} className="mb-2">
         <ResponsiveContainer>
-            <BarChart data={chartData} margin={{ top: 15, right: 10, left: 20, bottom: 5 }}>
+            <BarChart data={chartData} margin={{ top: 15, right: 10, left: 20, bottom: 15 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis width={66} tickMargin={6} tickFormatter={(val) => `${val/1000000} Jt`} />
@@ -75,10 +75,9 @@ export default function DashboardHome() {
     return (
         <div>
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md mb-8">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-                    <h3 className="font-bold text-base sm:text-lg">Estimasi Kurang Bayar:</h3>
+                <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center gap-2 mb-4">
+                    <h3 className="font-bold text-base sm:text-lg">Estimasi Kurang Bayar Tahun</h3>
                     <div className="flex items-center gap-2">
-                        <label className="text-sm text-gray-600">Tahun:</label>
                         <select 
                             value={currentYearIndex} 
                             onChange={(e) => setCurrentYearIndex(parseInt(e.target.value))}
