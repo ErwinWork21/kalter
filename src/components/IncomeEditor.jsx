@@ -37,14 +37,14 @@ export default function IncomeEditor({ incomes, hospitalList, onChange, onAdd, o
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Deskripsi (jika bukan dari daftar RS)"
+                                    placeholder="Ex: Spesialis Anak"
                                     value={income.source}
                                     onChange={e => onChange(index, 'source', e.target.value)}
                                     className={`w-full p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'}`}
                                 />
                                 <input
                                     type="text"
-                                    placeholder="Jumlah"
+                                    placeholder="Penghasilan Bruto"
                                     value={income.amount > 0 ? new Intl.NumberFormat('id-ID').format(income.amount) : ''}
                                     onChange={e => onChange(index, 'amount', e.target.value)}
                                     className={`w-full sm:w-1/2 p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'} text-right`}

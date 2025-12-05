@@ -5,7 +5,7 @@ import { BarChart2 } from 'lucide-react';
 import SummaryPair from '../components/SummaryPair';
 
 const MonthlyIncomeChart = ({ chartData, formatCurrency }) => (
-    <div style={{ width: '100%', height: 300 }} className="mb-6">
+    <div style={{ width: '100%', height: 300 }} className="mb-2">
         <ResponsiveContainer>
             <BarChart data={chartData} margin={{ top: 15, right: 10, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -54,10 +54,9 @@ export default function DashboardHome() {
                     <h4 className="font-bold text-lg mb-4">Rincian Perhitungan Pajak Tahunan</h4>
                     <div className="space-y-3 text-sm">
                         <SummaryPair label="Total Penghasilan Bruto:" value={formatCurrency(dashboard.rincianTahunan.totalPenghasilanBruto)} />
-                        <SummaryPair label="Penghasilan Kena Pajak:" value={formatCurrency(dashboard.rincianTahunan.penghasilanKenaPajak)} />
                         <hr className="my-2 border-gray-200"/>
                         <SummaryPair label="Pajak Terutang (PPh 21):" value={formatCurrency(dashboard.rincianTahunan.pajakTerutangTahunan)} />
-                        <SummaryPair label="Total Kredit Pajak:" value={formatCurrency(dashboard.rincianTahunan.totalKreditPajak)} />
+                        <SummaryPair label="Angsuran Pajak:" value={formatCurrency(dashboard.rincianTahunan.totalKreditPajak)} />
                         <hr className="my-3"/>
                         <SummaryPair label="Sisa Kurang / Lebih Bayar:" value={formatCurrency(dashboard.rincianTahunan.sisaBayarTahunan)} isBold={true} />
                     </div>
