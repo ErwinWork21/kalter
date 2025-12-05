@@ -8,6 +8,7 @@ import DashboardSkeleton from '../components/DashboardSkeleton';
 import NavItem from '../components/NavItem';
 import SummaryPair from '../components/SummaryPair';
 import { calculatePph21 } from '../utils/tax';
+import { yearNames } from '../constants/lists';
 
 const hospitalList = [ "RSUPN Dr. Cipto Mangunkusumo (RSCM)", "RS Kanker Dharmais", "RS Jantung dan Pembuluh Darah Harapan Kita", "RS Pondok Indah - Pondok Indah", "RS Pondok Indah - Puri Indah", "RS Medistra", "Mayapada Hospital Jakarta Selatan", "Mayapada Hospital Kuningan", "RS Siloam Lippo Village", "RS Metropolitan Medical Centre (MMC)", "RS Premier Jatinegara", "RS Mitra Keluarga Kemayoran", "RS Columbia Asia Pulomas", "RS Abdi Waluyo", "RS YARSI" ];
 
@@ -135,6 +136,8 @@ export default function Dashboard() {
     const [monthlyIncomes, setMonthlyIncomes] = useState(() => Array(12).fill(null).map(() => [{ hospital: '', source: '', amount: 0 }]));
     const [ptkpStatus] = useState('TK/0');
     const [savedData, setSavedData] = useState(null);
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+    const [allYearsData, setAllYearsData] = useState({});
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
@@ -165,10 +168,38 @@ export default function Dashboard() {
         const data = calcQuery.data;
         if (data?.saved_data) {
             const s = data.saved_data;
-            setSavedData(s.savedData || null);
-            if (s.monthlyIncomes) setMonthlyIncomes(s.monthlyIncomes);
+            // Support both old format (backward compatibility) and new year-based format
+            if (s.years) {
+                // New format: year-based data
+                setAllYearsData(s.years);
+            } else {
+                // Old format: backward compatibility - migrate to new format
+                const currentYear = new Date().getFullYear().toString();
+                const migratedYears = {
+                    [currentYear]: {
+                        savedData: s.savedData || null,
+                        monthlyIncomes: s.monthlyIncomes || Array(12).fill(null).map(() => [{ hospital: '', source: '', amount: 0 }])
+                    }
+                };
+                setAllYearsData(migratedYears);
+            }
         }
     }, [calcQuery.data]);
+
+    useEffect(() => {
+        const yearData = allYearsData[selectedYear];
+        if (yearData) {
+            setSavedData(yearData.savedData || null);
+            if (yearData.monthlyIncomes) {
+                setMonthlyIncomes(yearData.monthlyIncomes);
+            } else {
+                setMonthlyIncomes(Array(12).fill(null).map(() => [{ hospital: '', source: '', amount: 0 }]));
+            }
+        } else {
+            setSavedData(null);
+            setMonthlyIncomes(Array(12).fill(null).map(() => [{ hospital: '', source: '', amount: 0 }]));
+        }
+    }, [selectedYear, allYearsData]);
 
     const upsertMutation = useMutation({
         mutationFn: async (payload) => {
@@ -186,7 +217,8 @@ export default function Dashboard() {
         navigate('/');
     };
 
-    const handleSaveCalculation = async () => {
+    const handleSaveCalculation = async (year = null) => {
+        const currentYear = year || new Date().getFullYear().toString();
         const calculationResult = calculatePph21(monthlyIncomes, ptkpStatus);
         const rawInputs = monthlyIncomes
             .map((incomes, index) => ({
@@ -196,7 +228,21 @@ export default function Dashboard() {
             .filter(monthData => monthData.entries.length > 0);
         const newSavedData = { calculations: calculationResult, inputs: rawInputs };
         setSavedData(newSavedData);
-        const payload = { savedData: newSavedData, monthlyIncomes };
+        
+        // Get existing data to preserve other years
+        const existingYears = { ...allYearsData };
+        
+        // Update the specific year's data
+        const updatedYears = {
+            ...existingYears,
+            [currentYear]: {
+                savedData: newSavedData,
+                monthlyIncomes: monthlyIncomes
+            }
+        };
+        
+        setAllYearsData(updatedYears);
+        const payload = { years: updatedYears };
         upsertMutation.mutate(payload);
     };
 
@@ -249,7 +295,7 @@ export default function Dashboard() {
                         </div>
                     </header>
 
-                    <Outlet context={{ monthlyIncomes, setMonthlyIncomes, savedData, dashboardSummary, handleSaveCalculation }} />
+                    <Outlet context={{ monthlyIncomes, setMonthlyIncomes, savedData, dashboardSummary, handleSaveCalculation, selectedYear, setSelectedYear, allYearsData }} />
                 </main>
             </div>
         </div>
