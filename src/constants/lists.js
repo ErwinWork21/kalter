@@ -20,7 +20,9 @@ export const MONTH_NAMES_SHORT = [
 const getCurrentYear = () => new Date().getFullYear();
 const currentYear = getCurrentYear();
 
-export const YEAR_NAMES = Array.from({ length: 7 }, (_, i) => 
+// change the length to 5 to show 5 years of data which starts from 3 years from current year
+// for example, if current year is 2025, and the length is 5, then the year names will be 2022, 2023, 2024, 2025, 2026
+export const YEAR_NAMES = Array.from({ length: 5 }, (_, i) => 
   String(currentYear - 3 + i)
 );
 
