@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Stethoscope, BarChart2, FileText, User as UserIcon, LogIn } from 'lucide-react';
+import { BarChart2, FileText, User as UserIcon, LogIn } from 'lucide-react';
 import { useNavigate, NavLink, Outlet } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
 import { useCalculations } from '../hooks/useCalculations';
 import DashboardSkeleton from '../components/DashboardSkeleton';
 import NavItem from '../components/NavItem';
-import { YEAR_NAMES } from '../constants/lists';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -45,8 +44,7 @@ export default function Dashboard() {
         <aside className="bg-[#E0E7E1] w-full lg:w-64 p-4 lg:p-6 lg:min-h-screen flex flex-col">
           <div>
             <div className="flex items-center mb-8">
-              <Stethoscope className="w-10 h-10 text-[#3e4a4f]" />
-              <h1 className="ml-3 text-xl font-bold text-[#3e4a4f]">Kalkulator Dokter</h1>
+              <img src="/assets/kalter-logo-full.png" alt="Kalkulator Dokter" className="w-28" />
             </div>
             <nav className="flex flex-row lg:flex-col justify-around lg:justify-start lg:space-y-2">
               <NavLink to="/app/dashboard" className={({isActive}) => ''}>
@@ -95,8 +93,14 @@ export default function Dashboard() {
               </h2>
               <p className="text-gray-500">Selamat datang kembali di dashboard Anda.</p>
             </div>
-            <div className="flex items-center p-2 rounded-full bg-white shadow-sm self-end sm:self-center">
-              <UserIcon className="w-8 h-8 text-gray-600" />
+            <div className="flex items-center justify-center p-2 rounded-full bg-white shadow-sm self-end sm:self-center w-10 h-10">
+              {
+                user?.user_metadata?.displayName || user?.email ? (
+                  <p className="text-sm font-bold">{user?.user_metadata?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}</p>
+                ) : (
+                  <UserIcon className="w-5 h-5 text-gray-600" />
+                )
+              }
             </div>
           </header>
 
