@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
+import { formatNumber as formatNumberUtil } from '../utils/formatters';
 
 export default function IncomeEditor({ incomes, hospitalList, onChange, onAdd, onRemove, errorIndexes = [] }) {
     return (
@@ -45,7 +46,7 @@ export default function IncomeEditor({ incomes, hospitalList, onChange, onAdd, o
                                 <input
                                     type="text"
                                     placeholder="Penghasilan Bruto"
-                                    value={income.amount > 0 ? new Intl.NumberFormat('id-ID').format(income.amount) : ''}
+                                    value={income.amount > 0 ? formatNumberUtil(income.amount) : ''}
                                     onChange={e => onChange(index, 'amount', e.target.value)}
                                     className={`w-full sm:w-1/2 p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'} text-right`}
                                 />

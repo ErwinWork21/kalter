@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Stethoscope, Home, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { authService } from '../services/authService';
 
 const AuthFormContainer = ({ title, children, goHome }) => (
     <div className="min-h-screen bg-[#FDFBF6] font-sans">
@@ -40,7 +40,7 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
         setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await authService.signIn(email, password);
         if (error) { setError(error.message); setLoading(false); return; }
         navigate('/app');
     };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Stethoscope, Home, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient';
+import { authService } from '../services/authService';
 
 const AuthFormContainer = ({ title, children, goHome }) => (
     <div className="min-h-screen bg-[#FDFBF6] font-sans">
@@ -41,11 +41,7 @@ export default function RegisterPage() {
         e.preventDefault();
         setError('');
         setLoading(true);
-        const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { displayName } }
-        });
+        const { error } = await authService.signUp(email, password, displayName);
         if (error) { setError(error.message); setLoading(false); return; }
         alert('Registrasi berhasil! Periksa email Anda untuk verifikasi (jika diaktifkan).');
         navigate('/login');

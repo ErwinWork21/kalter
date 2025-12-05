@@ -3,8 +3,10 @@ import { useOutletContext } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 import SummaryPair from '../components/SummaryPair';
-import { yearNames } from '../constants/lists';
-import { calculatePph21 } from '../utils/tax';
+import { YEAR_NAMES, MONTH_NAMES_SHORT } from '../constants/lists';
+import { formatCurrency } from '../utils/formatters';
+import { DEFAULT_PTKP_STATUS } from '../constants/taxRates';
+import { calculationService } from '../services/calculationService';
 
 const MonthlyIncomeChart = ({ chartData, formatCurrency }) => (
     <div style={{ width: '100%', height: 300 }} className="mb-2">
@@ -30,26 +32,37 @@ const EmptyChartState = () => (
 );
 
 export default function DashboardHome() {
-    const { selectedYear, setSelectedYear, allYearsData, monthlyIncomes } = useOutletContext();
+    const { selectedYear, setSelectedYear, allYearsData, monthlyIncomes, dashboardSummary: contextDashboardSummary } = useOutletContext();
     const [currentYearIndex, setCurrentYearIndex] = useState(() => {
         const currentYear = new Date().getFullYear().toString();
-        return yearNames.findIndex(y => y === currentYear);
+        return YEAR_NAMES.findIndex(y => y === currentYear);
     });
-    
-    const formatCurrency = (value) => `Rp ${new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value !== undefined ? value : 0)}`;
-    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
     
     // Get data for selected year
     const yearData = allYearsData[selectedYear];
     const yearMonthlyIncomes = yearData?.monthlyIncomes || monthlyIncomes;
-    const dashboardSummary = useMemo(() => calculatePph21(yearMonthlyIncomes, 'TK/0'), [yearMonthlyIncomes]);
+    
+    // Use context dashboard summary if available, otherwise calculate
+    const calculatedSummary = useMemo(() => 
+        calculationService.calculateDashboardSummary(yearMonthlyIncomes, DEFAULT_PTKP_STATUS), 
+        [yearMonthlyIncomes]
+    );
+    const dashboardSummary = contextDashboardSummary || calculatedSummary;
+    
     const { dashboard, riwayat } = dashboardSummary;
     
-    const chartData = useMemo(() => monthNamesShort.map((name, index) => ({ name, "Penghasilan Bruto": riwayat[index] ? riwayat[index].penghasilanBruto : 0 })), [riwayat]);
+    const chartData = useMemo(() => 
+        MONTH_NAMES_SHORT.map((name, index) => ({ 
+            name, 
+            "Penghasilan Bruto": riwayat[index] ? riwayat[index].penghasilanBruto : 0 
+        })), 
+        [riwayat]
+    );
+    
     const hasData = useMemo(() => chartData.some(item => item["Penghasilan Bruto"] > 0), [chartData]);
     
     useEffect(() => {
-        const yearStr = yearNames[currentYearIndex];
+        const yearStr = YEAR_NAMES[currentYearIndex];
         if (yearStr) {
             setSelectedYear(yearStr);
         }
@@ -71,7 +84,7 @@ export default function DashboardHome() {
                             onChange={(e) => setCurrentYearIndex(parseInt(e.target.value))}
                             className="p-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74] text-sm"
                         >
-                            {yearNames.map((name, index) => (
+                            {YEAR_NAMES.map((name, index) => (
                                 <option key={index} value={index}>{name}</option>
                             ))}
                         </select>

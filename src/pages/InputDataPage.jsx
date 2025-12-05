@@ -4,7 +4,8 @@ import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom
 import IncomeEditor from '../components/IncomeEditor';
 import Toast from '../components/Toast';
 import { validateIncomesComplete } from '../utils/validation';
-import { hospitalList as sharedHospitalList, monthNames as sharedMonthNames, yearNames as sharedYearNames } from '../constants/lists';
+import { HOSPITAL_LIST, MONTH_NAMES, YEAR_NAMES } from '../constants/lists';
+import { parseAmount } from '../utils/formatters';
 
 // using shared lists from constants
 
@@ -12,12 +13,15 @@ export default function InputDataPage() {
     const { monthlyIncomes, setMonthlyIncomes, handleSaveCalculation, selectedYear, setSelectedYear, allYearsData } = useOutletContext();
     const [searchParams] = useSearchParams();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    // Initialize currentYear from selectedYear in context, fallback to current year
     const [currentYear, setCurrentYear] = useState(() => {
+        if (selectedYear) {
+            const yearIndex = YEAR_NAMES.findIndex(y => y === selectedYear);
+            if (yearIndex !== -1) return yearIndex;
+        }
         const currentYearStr = new Date().getFullYear().toString();
-        return sharedYearNames.findIndex(y => y === currentYearStr);
+        return YEAR_NAMES.findIndex(y => y === currentYearStr);
     });
-    const monthNamesLocal = sharedMonthNames;
-    const yearNamesLocal = sharedYearNames;
     const navigate = useNavigate();
     const [showToast, setShowToast] = useState(false);
     const [showError, setShowError] = useState(false);
@@ -29,25 +33,23 @@ export default function InputDataPage() {
     // Update selectedYear when currentYear changes in InputDataPage (only if changed internally)
     useEffect(() => {
         if (isInternalYearChange.current) {
-            const yearStr = yearNamesLocal[currentYear];
+            const yearStr = YEAR_NAMES[currentYear];
             if (yearStr && yearStr !== selectedYear) {
                 setSelectedYear(yearStr);
             }
             isInternalYearChange.current = false;
         }
-    }, [currentYear, yearNamesLocal, selectedYear, setSelectedYear]);
+    }, [currentYear, selectedYear, setSelectedYear]);
 
     // Sync currentYear with selectedYear when it changes externally (e.g., from Dashboard)
-    // Only sync if the change came from outside this component
+    // Also sync on initial mount to ensure data is loaded correctly
     useEffect(() => {
-        if (prevSelectedYear.current === selectedYear) return;
-        
-        const yearIndex = yearNamesLocal.findIndex(y => y === selectedYear);
+        const yearIndex = YEAR_NAMES.findIndex(y => y === selectedYear);
         if (yearIndex !== -1 && yearIndex !== currentYear) {
             setCurrentYear(yearIndex);
         }
         prevSelectedYear.current = selectedYear;
-    }, [selectedYear, yearNamesLocal, currentYear]);
+    }, [selectedYear, currentYear]);
 
     useEffect(() => {
         const monthParam = searchParams.get('month');
@@ -61,8 +63,8 @@ export default function InputDataPage() {
 
     const saveMutation = useMutation({
         mutationFn: async () => {
-            const selectedYear = yearNamesLocal[currentYear];
-            return handleSaveCalculation(selectedYear);
+            const targetYear = YEAR_NAMES[currentYear];
+            return handleSaveCalculation(targetYear);
         },
         onSuccess: () => {
             setShowToast(true);
@@ -73,8 +75,7 @@ export default function InputDataPage() {
         const newMonthlyIncomes = JSON.parse(JSON.stringify(monthlyIncomes));
         const currentIncome = newMonthlyIncomes[currentMonth][incomeIndex];
         if (field === 'amount') {
-            const numberValue = parseInt(String(value).replace(/[^0-9]/g, ''), 10) || 0;
-            currentIncome.amount = numberValue;
+            currentIncome.amount = parseAmount(value);
         } else {
             currentIncome[field] = value;
         }
@@ -150,7 +151,7 @@ export default function InputDataPage() {
                     <div className='flex flex-1 flex-col gap-1'>
                         <label className="block text-gray-700 text-sm font-bold mb-2">Bulan</label>
                         <select value={currentMonth} onChange={(e) => setCurrentMonth(parseInt(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]">
-                            {monthNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
+                            {MONTH_NAMES.map((name, index) => <option key={index} value={index}>{name}</option>)}
                         </select>
                     </div>
                     <div className='flex flex-1 flex-col gap-1'>
@@ -168,15 +169,15 @@ export default function InputDataPage() {
                             }} 
                             className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]"
                         >
-                            {yearNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
+                            {YEAR_NAMES.map((name, index) => <option key={index} value={index}>{name}</option>)}
                         </select>
-                        <p className="text-xs text-gray-500 mt-1">Data akan disimpan untuk tahun {yearNamesLocal[currentYear]}</p>
+                        <p className="text-xs text-gray-500 mt-1">Data akan disimpan untuk tahun {YEAR_NAMES[currentYear]}</p>
                     </div>
                 </div>
                 <IncomeEditor
                     key={`${selectedYear}-${currentMonth}`}
                     incomes={monthlyIncomes[currentMonth] || [{ hospital: '', source: '', amount: 0 }]}
-                    hospitalList={sharedHospitalList}
+                    hospitalList={HOSPITAL_LIST}
                     onChange={handleIncomeChange}
                     onAdd={addIncomeField}
                     onRemove={removeIncomeField}
