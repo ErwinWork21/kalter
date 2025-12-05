@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate, useOutletContext } from 'react-router-dom';
-import { monthNames as sharedMonthNames, hospitalList as sharedHospitalList } from '../constants/lists';
+import { useNavigate, useOutletContext, Link } from 'react-router-dom';
+import { monthNames as sharedMonthNames, hospitalList as sharedHospitalList, yearNames } from '../constants/lists';
 import IncomeEditor from '../components/IncomeEditor';
 import Toast from '../components/Toast';
 import { validateIncomesComplete } from '../utils/validation';
+import { FileText, PlusCircle } from 'lucide-react';
 
 export default function RiwayatPage() {
-    const { savedData, monthlyIncomes, setMonthlyIncomes, handleSaveCalculation } = useOutletContext();
+    const { savedData, monthlyIncomes, setMonthlyIncomes, handleSaveCalculation, selectedYear, setSelectedYear, allYearsData } = useOutletContext();
     const navigate = useNavigate();
     const monthNames = sharedMonthNames;
     const [editingMonthIndex, setEditingMonthIndex] = useState(null);
@@ -15,11 +16,75 @@ export default function RiwayatPage() {
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [errorIndexes, setErrorIndexes] = useState([]);
+    // Initialize currentYearIndex based on selectedYear from context, not just current year
+    const [currentYearIndex, setCurrentYearIndex] = useState(() => {
+        const yearIndex = yearNames.findIndex(y => y === selectedYear);
+        return yearIndex !== -1 ? yearIndex : yearNames.findIndex(y => y === new Date().getFullYear().toString());
+    });
+    const isInternalYearChange = useRef(false);
+    const prevSelectedYear = useRef(null); // Start as null to ensure first sync happens
+    const prevCurrentYearIndex = useRef(currentYearIndex);
+    const isMounted = useRef(false);
+    
     const formatCurrency = (value) => `Rp ${new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value || 0)}`;
+
+    // Get year-specific savedData - ensure it updates when selectedYear changes
+    const yearSavedData = useMemo(() => {
+        if (!selectedYear) return null;
+        const yearData = allYearsData[selectedYear];
+        return yearData?.savedData || null;
+    }, [allYearsData, selectedYear]);
+
+    // Update selectedYear when currentYearIndex changes (only if changed internally via dropdown)
+    useEffect(() => {
+        // Only update if currentYearIndex actually changed
+        if (prevCurrentYearIndex.current !== currentYearIndex) {
+            if (isInternalYearChange.current) {
+                const yearStr = yearNames[currentYearIndex];
+                if (yearStr && yearStr !== selectedYear) {
+                    // Update selectedYear when user changes the dropdown
+                    setSelectedYear(yearStr);
+                }
+            }
+            prevCurrentYearIndex.current = currentYearIndex;
+        }
+    }, [currentYearIndex, selectedYear, setSelectedYear]);
+
+    // Sync year index with selectedYear (when changed externally or on mount)
+    useEffect(() => {
+        // On first mount, always sync
+        if (!isMounted.current) {
+            const yearIndex = yearNames.findIndex(y => y === selectedYear);
+            if (yearIndex !== -1 && yearIndex !== currentYearIndex) {
+                setCurrentYearIndex(yearIndex);
+                prevCurrentYearIndex.current = yearIndex;
+            }
+            prevSelectedYear.current = selectedYear;
+            isMounted.current = true;
+            return;
+        }
+        
+        // Skip if selectedYear hasn't actually changed
+        if (prevSelectedYear.current === selectedYear) return;
+        
+        // Only sync if the change was NOT initiated internally
+        // (if it was internal, currentYearIndex is already correct)
+        if (!isInternalYearChange.current) {
+            const yearIndex = yearNames.findIndex(y => y === selectedYear);
+            if (yearIndex !== -1 && yearIndex !== currentYearIndex) {
+                setCurrentYearIndex(yearIndex);
+                prevCurrentYearIndex.current = yearIndex;
+            }
+        } else {
+            // Reset the flag after handling the internal change
+            isInternalYearChange.current = false;
+        }
+        prevSelectedYear.current = selectedYear;
+    }, [selectedYear, currentYearIndex]);
 
     const saveMutation = useMutation({
         mutationFn: async () => {
-            return handleSaveCalculation();
+            return handleSaveCalculation(selectedYear);
         },
         onSuccess: () => {
             setEditingMonthIndex(null);
@@ -80,15 +145,49 @@ export default function RiwayatPage() {
         await saveMutation.mutateAsync();
     };
 
-    if (!savedData) {
+    if (!yearSavedData) {
         return (
-            <div className="bg-white p-8 rounded-2xl shadow-md text-center">
-                <h3 className="font-bold text-2xl mb-4">Riwayat Data Anda</h3>
-                <p className="text-gray-500">Belum ada data yang disimulasikan. Silakan isi data di menu "Input Data" terlebih dahulu.</p>
+            <div className="bg-white p-8 rounded-2xl shadow-md">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h3 className="font-bold text-2xl">Riwayat Data Anda</h3>
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">Tahun:</label>
+                        <select 
+                            value={currentYearIndex} 
+                            onChange={(e) => {
+                                const newIndex = parseInt(e.target.value);
+                                isInternalYearChange.current = true;
+                                setCurrentYearIndex(newIndex);
+                            }}
+                            className="p-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74] text-sm"
+                        >
+                            {yearNames.map((name, index) => (
+                                <option key={index} value={index}>{name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                    <div className="mb-6 p-6 rounded-full bg-gray-100">
+                        <FileText className="w-16 h-16 text-gray-400" />
+                    </div>
+                    <h4 className="text-xl font-bold text-gray-700 mb-2">Belum Ada Data untuk Tahun {yearNames[currentYearIndex]}</h4>
+                    <p className="text-gray-500 mb-6 max-w-md">
+                        Belum ada data penghasilan yang disimulasikan untuk tahun {yearNames[currentYearIndex]}. 
+                        Mulai input data penghasilan bulanan Anda untuk melihat riwayat dan perhitungan pajak.
+                    </p>
+                    <Link
+                        to="/app/input"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-[#C89F74] hover:bg-[#b98e65] text-white font-semibold rounded-lg transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#C89F74] focus:ring-offset-2"
+                    >
+                        <PlusCircle className="w-5 h-5" />
+                        <span>Input Data Baru</span>
+                    </Link>
+                </div>
             </div>
         );
     }
-    const { inputs } = savedData;
+    const { inputs } = yearSavedData;
     return (
         <div className="bg-white p-6 rounded-2xl shadow-md" aria-busy={saveMutation.isPending}>
             <Toast 
@@ -109,8 +208,28 @@ export default function RiwayatPage() {
                     setErrorIndexes([]);
                 }}
             />
-            <h3 className="font-bold text-2xl mb-6">Riwayat Data Anda</h3>
-            <p className="text-gray-600 mb-4 text-sm">Berikut adalah rincian data penghasilan yang telah Anda simpan.</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <div>
+                    <h3 className="font-bold text-2xl mb-2">Riwayat Data Anda</h3>
+                    <p className="text-gray-600 text-sm">Berikut adalah rincian data penghasilan yang telah Anda simpan untuk tahun {yearNames[currentYearIndex]}.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-600 font-medium">Tahun:</label>
+                    <select 
+                        value={currentYearIndex} 
+                        onChange={(e) => {
+                            const newIndex = parseInt(e.target.value);
+                            isInternalYearChange.current = true;
+                            setCurrentYearIndex(newIndex);
+                        }}
+                        className="p-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74] text-sm"
+                    >
+                        {yearNames.map((name, index) => (
+                            <option key={index} value={index}>{name}</option>
+                        ))}
+                    </select>
+                </div>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm text-left text-gray-600">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-100">
@@ -184,8 +303,8 @@ export default function RiwayatPage() {
                 </div>
             )}
             <div className="mt-6 p-4 bg-[#3e4a4f] text-white rounded-lg flex justify-between items-center">
-                <span className="text-lg font-bold">Total Penghasilan Bruto Setahun</span>
-                <span className="text-2xl font-extrabold">{formatCurrency(savedData.calculations.dashboard.rincianTahunan.totalPenghasilanBruto)}</span>
+                <span className="text-lg font-bold">Total Penghasilan Bruto Setahun ({yearNames[currentYearIndex]})</span>
+                <span className="text-2xl font-extrabold">{formatCurrency(yearSavedData.calculations.dashboard.rincianTahunan.totalPenghasilanBruto)}</span>
             </div>
         </div>
     );
