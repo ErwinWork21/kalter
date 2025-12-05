@@ -3,6 +3,11 @@ export const monthNames = [
     "Juli", "Agustus", "September", "Oktober", "November", "Desember"
 ];
 
+const currentYear = new Date().getFullYear();
+export const yearNames = Array.from({ length: 7 }, (_, i) => 
+    String(currentYear - 3 + i)
+);
+
 export const hospitalList = [
     "RSUPN Dr. Cipto Mangunkusumo (RSCM)",
     "RS Kanker Dharmais",

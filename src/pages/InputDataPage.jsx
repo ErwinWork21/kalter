@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom
 import IncomeEditor from '../components/IncomeEditor';
 import Toast from '../components/Toast';
 import { validateIncomesComplete } from '../utils/validation';
-import { hospitalList as sharedHospitalList, monthNames as sharedMonthNames } from '../constants/lists';
+import { hospitalList as sharedHospitalList, monthNames as sharedMonthNames, yearNames as sharedYearNames } from '../constants/lists';
 
 // using shared lists from constants
 
@@ -12,7 +12,9 @@ export default function InputDataPage() {
     const { monthlyIncomes, setMonthlyIncomes, handleSaveCalculation } = useOutletContext();
     const [searchParams] = useSearchParams();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+    const [currentYear, setCurrentYear] = useState(3); // Index 3 is the current year (3 years back + current = index 3)
     const monthNamesLocal = sharedMonthNames;
+    const yearNamesLocal = sharedYearNames;
     const navigate = useNavigate();
     const [showToast, setShowToast] = useState(false);
     const [showError, setShowError] = useState(false);
@@ -114,12 +116,20 @@ export default function InputDataPage() {
         />
         <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-2xl shadow-md max-w-2xl mx-auto" aria-busy={saveMutation.isPending}>
             <h3 className="font-bold text-xl sm:text-2xl mb-6">Input Data Pajak Bulanan</h3>
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Bulan</label>
-                    <select value={currentMonth} onChange={(e) => setCurrentMonth(parseInt(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]">
-                        {monthNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
-                    </select>
+            <div className="space-y-4 w-full">
+                <div className='flex gap-2 w-full'>
+                    <div className='flex flex-1 flex-col gap-1'>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Bulan</label>
+                        <select value={currentMonth} onChange={(e) => setCurrentMonth(parseInt(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]">
+                            {monthNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
+                        </select>
+                    </div>
+                    <div className='flex flex-1 flex-col gap-1'>
+                        <label className="block text-gray-700 text-sm font-bold mb-2">Tahun</label>
+                        <select value={currentYear} onChange={(e) => setCurrentYear(parseInt(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]">
+                            {yearNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
+                        </select>
+                    </div>
                 </div>
                 <IncomeEditor
                     incomes={monthlyIncomes[currentMonth]}
