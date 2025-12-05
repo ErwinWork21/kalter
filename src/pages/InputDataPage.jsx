@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom';
 import IncomeEditor from '../components/IncomeEditor';
@@ -9,10 +9,13 @@ import { hospitalList as sharedHospitalList, monthNames as sharedMonthNames, yea
 // using shared lists from constants
 
 export default function InputDataPage() {
-    const { monthlyIncomes, setMonthlyIncomes, handleSaveCalculation } = useOutletContext();
+    const { monthlyIncomes, setMonthlyIncomes, handleSaveCalculation, selectedYear, setSelectedYear, allYearsData } = useOutletContext();
     const [searchParams] = useSearchParams();
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
-    const [currentYear, setCurrentYear] = useState(3); // Index 3 is the current year (3 years back + current = index 3)
+    const [currentYear, setCurrentYear] = useState(() => {
+        const currentYearStr = new Date().getFullYear().toString();
+        return sharedYearNames.findIndex(y => y === currentYearStr);
+    });
     const monthNamesLocal = sharedMonthNames;
     const yearNamesLocal = sharedYearNames;
     const navigate = useNavigate();
@@ -20,6 +23,31 @@ export default function InputDataPage() {
     const [showError, setShowError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
     const [errorIndexes, setErrorIndexes] = useState([]);
+    const isInternalYearChange = useRef(false);
+    const prevSelectedYear = useRef(selectedYear);
+
+    // Update selectedYear when currentYear changes in InputDataPage (only if changed internally)
+    useEffect(() => {
+        if (isInternalYearChange.current) {
+            const yearStr = yearNamesLocal[currentYear];
+            if (yearStr && yearStr !== selectedYear) {
+                setSelectedYear(yearStr);
+            }
+            isInternalYearChange.current = false;
+        }
+    }, [currentYear, yearNamesLocal, selectedYear, setSelectedYear]);
+
+    // Sync currentYear with selectedYear when it changes externally (e.g., from Dashboard)
+    // Only sync if the change came from outside this component
+    useEffect(() => {
+        if (prevSelectedYear.current === selectedYear) return;
+        
+        const yearIndex = yearNamesLocal.findIndex(y => y === selectedYear);
+        if (yearIndex !== -1 && yearIndex !== currentYear) {
+            setCurrentYear(yearIndex);
+        }
+        prevSelectedYear.current = selectedYear;
+    }, [selectedYear, yearNamesLocal, currentYear]);
 
     useEffect(() => {
         const monthParam = searchParams.get('month');
@@ -33,7 +61,8 @@ export default function InputDataPage() {
 
     const saveMutation = useMutation({
         mutationFn: async () => {
-            return handleSaveCalculation();
+            const selectedYear = yearNamesLocal[currentYear];
+            return handleSaveCalculation(selectedYear);
         },
         onSuccess: () => {
             setShowToast(true);
@@ -126,13 +155,27 @@ export default function InputDataPage() {
                     </div>
                     <div className='flex flex-1 flex-col gap-1'>
                         <label className="block text-gray-700 text-sm font-bold mb-2">Tahun</label>
-                        <select value={currentYear} onChange={(e) => setCurrentYear(parseInt(e.target.value))} className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]">
+                        <select 
+                            value={currentYear} 
+                            onChange={(e) => {
+                                const newYearIndex = parseInt(e.target.value);
+                                isInternalYearChange.current = true;
+                                setCurrentYear(newYearIndex);
+                                // Clear errors
+                                setErrorIndexes([]);
+                                setShowError(false);
+                                setErrorMessage('');
+                            }} 
+                            className="w-full p-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]"
+                        >
                             {yearNamesLocal.map((name, index) => <option key={index} value={index}>{name}</option>)}
                         </select>
+                        <p className="text-xs text-gray-500 mt-1">Data akan disimpan untuk tahun {yearNamesLocal[currentYear]}</p>
                     </div>
                 </div>
                 <IncomeEditor
-                    incomes={monthlyIncomes[currentMonth]}
+                    key={`${selectedYear}-${currentMonth}`}
+                    incomes={monthlyIncomes[currentMonth] || [{ hospital: '', source: '', amount: 0 }]}
                     hospitalList={sharedHospitalList}
                     onChange={handleIncomeChange}
                     onAdd={addIncomeField}
