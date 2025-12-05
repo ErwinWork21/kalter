@@ -1,8 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { BarChart2 } from 'lucide-react';
 import SummaryPair from '../components/SummaryPair';
+import { yearNames } from '../constants/lists';
+import { calculatePph21 } from '../utils/tax';
 
 const MonthlyIncomeChart = ({ chartData, formatCurrency }) => (
     <div style={{ width: '100%', height: 300 }} className="mb-2">
@@ -28,12 +30,30 @@ const EmptyChartState = () => (
 );
 
 export default function DashboardHome() {
-    const { dashboardSummary } = useOutletContext();
+    const { selectedYear, setSelectedYear, allYearsData, monthlyIncomes } = useOutletContext();
+    const [currentYearIndex, setCurrentYearIndex] = useState(() => {
+        const currentYear = new Date().getFullYear().toString();
+        return yearNames.findIndex(y => y === currentYear);
+    });
+    
     const formatCurrency = (value) => `Rp ${new Intl.NumberFormat('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value !== undefined ? value : 0)}`;
-    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]; 
+    const monthNamesShort = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    
+    // Get data for selected year
+    const yearData = allYearsData[selectedYear];
+    const yearMonthlyIncomes = yearData?.monthlyIncomes || monthlyIncomes;
+    const dashboardSummary = useMemo(() => calculatePph21(yearMonthlyIncomes, 'TK/0'), [yearMonthlyIncomes]);
     const { dashboard, riwayat } = dashboardSummary;
+    
     const chartData = useMemo(() => monthNamesShort.map((name, index) => ({ name, "Penghasilan Bruto": riwayat[index] ? riwayat[index].penghasilanBruto : 0 })), [riwayat]);
     const hasData = useMemo(() => chartData.some(item => item["Penghasilan Bruto"] > 0), [chartData]);
+    
+    useEffect(() => {
+        const yearStr = yearNames[currentYearIndex];
+        if (yearStr) {
+            setSelectedYear(yearStr);
+        }
+    }, [currentYearIndex, setSelectedYear]);
 
     const chartContent = hasData 
         ? <MonthlyIncomeChart chartData={chartData} formatCurrency={formatCurrency} />
@@ -42,7 +62,21 @@ export default function DashboardHome() {
     return (
         <div>
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-md mb-8">
-                <h3 className="font-bold text-base sm:text-lg mb-1">Estimasi Kurang Bayar Tahun Ini:</h3>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <h3 className="font-bold text-base sm:text-lg">Estimasi Kurang Bayar:</h3>
+                    <div className="flex items-center gap-2">
+                        <label className="text-sm text-gray-600">Tahun:</label>
+                        <select 
+                            value={currentYearIndex} 
+                            onChange={(e) => setCurrentYearIndex(parseInt(e.target.value))}
+                            className="p-2 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74] text-sm"
+                        >
+                            {yearNames.map((name, index) => (
+                                <option key={index} value={index}>{name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
                 <p className={`text-2xl sm:text-3xl font-bold ${dashboard.estimasiKurangBayar >= 0 ? 'text-red-600' : 'text-green-600'}`}>{formatCurrency(dashboard.estimasiKurangBayar)}</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
