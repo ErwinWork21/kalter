@@ -61,5 +61,25 @@ export const authService = {
    */
   onAuthStateChange(callback) {
     return supabase.auth.onAuthStateChange(callback);
+  },
+
+  /**
+   * Send password reset email
+   * @param {string} email - User email
+   * @returns {Promise<{data: Object|null, error: Error|null}>}
+   */
+  async resetPassword(email) {
+    return await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+  },
+
+  /**
+   * Update password for an authenticated user (or after recovery)
+   * @param {string} newPassword - New password
+   * @returns {Promise<{data: Object|null, error: Error|null}>}
+   */
+  async updatePassword(newPassword) {
+    return await supabase.auth.updateUser({ password: newPassword });
   }
 };

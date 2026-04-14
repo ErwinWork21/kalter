@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Stethoscope, Home, Loader2 } from 'lucide-react';
+import { Stethoscope, Home, Loader2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 
@@ -19,8 +19,11 @@ const AuthFormContainer = ({ title, children, goHome }) => (
         <div className="flex items-center justify-center p-4 pt-16">
             <div className="w-full max-w-md">
                 <div className="bg-[#E0E7E1] p-6 sm:p-8 rounded-2xl shadow-lg">
-                    <div className="flex justify-center items-center mb-4">
-                        <h1 className="ml-3 text-2xl font-bold text-[#3e4a4f]">{title}</h1>
+                    <button onClick={() => window.history.back()} className="mb-4 flex items-center text-sm text-gray-600 hover:text-[#C89F74] transition-colors">
+                        <ArrowLeft className="w-4 h-4 mr-1" /> Kembali
+                    </button>
+                    <div className="flex justify-center items-center mb-2">
+                        <h1 className="text-2xl font-bold text-[#3e4a4f]">{title}</h1>
                     </div>
                     {children}
                 </div>
@@ -29,9 +32,9 @@ const AuthFormContainer = ({ title, children, goHome }) => (
     </div>
 );
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -39,47 +42,38 @@ export default function LoginPage() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setMessage('');
         setLoading(true);
-        const { error } = await authService.signIn(email, password);
-        if (error) { setError(error.message); setLoading(false); return; }
-        navigate('/app');
-    };
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            e.currentTarget.form?.requestSubmit();
+        const { error } = await authService.resetPassword(email);
+        if (error) { 
+            setError(error.message); 
+            setLoading(false); 
+            return; 
         }
+        setMessage('Tautan reset password telah dikirim ke email Anda. Silakan periksa inbox atau folder spam.');
+        setLoading(false);
     };
 
     return (
-        <AuthFormContainer title="Login Akun" goHome={() => navigate('/') }>
+        <AuthFormContainer title="Lupa Password" goHome={() => navigate('/') }>
+            <p className="text-center text-gray-600 text-sm mb-6">Masukkan email yang terdaftar untuk mengatur ulang password Anda.</p>
             <form onSubmit={handleSubmit}>
-                {error && <p className="text-red-500 text-center text-sm mb-4">{error}</p>}
-                <div className="mb-4">
-                    <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
-                    <input onKeyDown={handleKeyDown} type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]" />
-                </div>
+                {error && <p className="text-red-500 text-center text-sm mb-4 bg-red-50 p-2 rounded">{error}</p>}
+                {message && <p className="text-green-600 text-center text-sm mb-4 bg-green-50 p-2 rounded">{message}</p>}
                 <div className="mb-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <label className="block text-gray-700 text-sm font-bold">Password</label>
-                        <button type="button" onClick={() => navigate('/forgot-password')} className="text-sm font-bold text-[#C89F74] hover:text-[#b98e65] hover:underline">Lupa Password?</button>
-                    </div>
-                    <input onKeyDown={handleKeyDown} type="password" value={password} onChange={e => setPassword(e.target.value)} required className="w-full p-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]" />
+                    <label className="block text-gray-700 text-sm font-bold mb-2">Email</label>
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full p-3 bg-white border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#C89F74]" placeholder="contoh@email.com" />
                 </div>
                 <button type="submit" disabled={loading} className="w-full bg-[#C89F74] hover:bg-[#b98e65] disabled:bg-[#b98e65] disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center">
                     {loading ? (
                         <>
                             <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Memproses...
+                            Mengirim...
                         </>
                     ) : (
-                        'Login'
+                        'Kirim Tautan Reset'
                     )}
                 </button>
-                <p className="text-center text-gray-600 text-sm mt-6">
-                    Belum punya akun? <button type="button" onClick={() => navigate('/register')} className="font-bold text-[#C89F74] hover:text-[#b98e65]">Daftar di sini</button>
-                </p>
             </form>
         </AuthFormContainer>
     );
