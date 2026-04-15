@@ -69,8 +69,9 @@ export const authService = {
    * @returns {Promise<{data: Object|null, error: Error|null}>}
    */
   async resetPassword(email) {
+    const siteUrl = process.env.REACT_APP_SITE_URL || window.location.origin;
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.REACT_APP_SITE_URL}/reset-password`,
+      redirectTo: `${siteUrl}/reset-password`,
     });
   },
 
