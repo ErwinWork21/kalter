@@ -70,7 +70,7 @@ export const authService = {
    */
   async resetPassword(email) {
     return await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${process.env.REACT_APP_SITE_URL}/reset-password`,
     });
   },
 
