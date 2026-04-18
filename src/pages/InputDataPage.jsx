@@ -4,7 +4,7 @@ import { useOutletContext, useNavigate, useSearchParams } from 'react-router-dom
 import IncomeEditor from '../components/IncomeEditor';
 import Toast from '../components/Toast';
 import { validateIncomesComplete } from '../utils/validation';
-import { HOSPITAL_LIST, MONTH_NAMES, YEAR_NAMES } from '../constants/lists';
+import { HOSPITAL_LIST, MONTH_NAMES, YEAR_NAMES, SPECIALTY_LIST } from '../constants/lists';
 import { parseAmount } from '../utils/formatters';
 
 // using shared lists from constants
@@ -181,6 +181,7 @@ export default function InputDataPage() {
                         key={`${selectedYear}-${currentMonth}`}
                         incomes={monthlyIncomes[currentMonth] || [{ hospital: '', source: '', amount: 0 }]}
                         hospitalList={HOSPITAL_LIST}
+                        specialtyList={SPECIALTY_LIST}
                         onChange={handleIncomeChange}
                         onAdd={addIncomeField}
                         onRemove={removeIncomeField}

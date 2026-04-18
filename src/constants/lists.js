@@ -3337,3 +3337,24 @@ export const HOSPITAL_LIST = [
 export const monthNames = MONTH_NAMES;
 export const yearNames = YEAR_NAMES;
 export const hospitalList = HOSPITAL_LIST;
+
+/**
+ * Specialty list for income source
+ */
+export const SPECIALTY_LIST = [
+  "Ilmu Penyakit Dalam (Sp.PD)",
+  "Ilmu Kesehatan Anak (Sp.A)",
+  "Obstetri dan Ginekologi (Sp.OG)",
+  "Kardiologi / Penyakit Jantung dan Pembuluh Darah (Sp.JP)",
+  "Anestesiologi dan Terapi Intensif (Sp.An)",
+  "Neurologi (Saraf) (Sp.N)",
+  "Radiologi (Sp.Rad)",
+  "Orthopaedi dan Traumatologi (Sp.OT)",
+  "Dermatologi dan Venerologi (Sp.DV/Sp.KK)",
+  "Ilmu Kesehatan THT Bedah Kepala dan Leher (Sp.THT-BKL)",
+  "Psikiatri (Kedokteran Jiwa) (Sp.KJ)",
+  "Pulmonologi dan Kedokteran Respirasi (Sp.P)",
+  "Patologi Klinik & Patologi Anatomik (Sp.PK/Sp.PA)",
+  "Bedah Saraf & Bedah Umum (Sp.BS/Sp.B)",
+  "Urologi (Sp.U)"
+];

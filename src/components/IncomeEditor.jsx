@@ -2,7 +2,7 @@ import React from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { formatNumber as formatNumberUtil } from '../utils/formatters';
 
-export default function IncomeEditor({ incomes, hospitalList, onChange, onAdd, onRemove, errorIndexes = [] }) {
+export default function IncomeEditor({ incomes, hospitalList, specialtyList, onChange, onAdd, onRemove, errorIndexes = [] }) {
     return (
         <div className="space-y-4">
             {incomes.map((income, index) => {
@@ -36,13 +36,16 @@ export default function IncomeEditor({ incomes, hospitalList, onChange, onAdd, o
                         <div>
                             <label className="block text-gray-700 text-sm font-bold mb-1">Sumber Penghasilan</label>
                             <div className="flex flex-col sm:flex-row gap-2">
-                                <input
-                                    type="text"
-                                    placeholder="Ex: Spesialis Anak"
+                                <select
                                     value={income.source}
                                     onChange={e => onChange(index, 'source', e.target.value)}
                                     className={`w-full p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'}`}
-                                />
+                                >
+                                    <option value="">-- Pilih Spesialis --</option>
+                                    {specialtyList.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
                                 <input
                                     type="text"
                                     placeholder="Penghasilan Bruto"
