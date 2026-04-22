@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { formatNumber as formatNumberUtil } from '../utils/formatters';
+import SearchableSelect from './SearchableSelect';
 
 export default function IncomeEditor({ incomes, hospitalList, specialtyList, onChange, onAdd, onRemove, errorIndexes = [] }) {
     return (
@@ -22,30 +23,26 @@ export default function IncomeEditor({ incomes, hospitalList, specialtyList, onC
                         )}
                         <div className="mb-3">
                             <label className="block text-gray-700 text-sm font-bold mb-1">Rumah Sakit</label>
-                            <select
+                            <SearchableSelect
                                 value={income.hospital}
-                                onChange={e => onChange(index, 'hospital', e.target.value)}
-                                className={`w-full p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'}`}
-                            >
-                                <option value="">-- Pilih dari Daftar RS --</option>
-                                {hospitalList.map(h => (
-                                    <option key={h} value={h}>{h}</option>
-                                ))}
-                            </select>
+                                onChange={(val) => onChange(index, 'hospital', val)}
+                                options={hospitalList}
+                                placeholder="-- Pilih dari Daftar RS --"
+                                hasError={hasError}
+                            />
                         </div>
                         <div>
                             <label className="block text-gray-700 text-sm font-bold mb-1">Sumber Penghasilan</label>
                             <div className="flex flex-col sm:flex-row gap-2">
-                                <select
-                                    value={income.source}
-                                    onChange={e => onChange(index, 'source', e.target.value)}
-                                    className={`w-full p-2 ${hasError ? 'border-red-500 border-2' : 'border'} rounded-lg bg-white focus:outline-none focus:ring-2 ${hasError ? 'focus:ring-red-500' : 'focus:ring-[#C89F74]'}`}
-                                >
-                                    <option value="">-- Pilih Spesialis --</option>
-                                    {specialtyList.map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))}
-                                </select>
+                                <div className="w-full sm:w-1/2 flex-grow">
+                                    <SearchableSelect
+                                        value={income.source}
+                                        onChange={(val) => onChange(index, 'source', val)}
+                                        options={specialtyList}
+                                        placeholder="-- Pilih Spesialis --"
+                                        hasError={hasError}
+                                    />
+                                </div>
                                 <input
                                     type="text"
                                     placeholder="Penghasilan Bruto"
